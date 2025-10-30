@@ -1,0 +1,7 @@
+{
+  "name": "Gemini Voice Chat",
+  "description": "A real-time voice chat application connecting two users via WebRTC and a signaling server, built with React, TypeScript, and Tailwind CSS.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
