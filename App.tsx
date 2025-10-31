@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { CallStatus } from './types';
 import { PhoneIcon, HangUpIcon, CopyIcon, LinkIcon } from './components/Icons';
@@ -14,6 +13,9 @@ const STUN_SERVERS = {
         { urls: 'stun:stun1.l.google.com:19302' },
     ],
 };
+
+// Default room name used when no room ID is provided by the user.
+const DEFAULT_ROOM_NAME = 'public-room';
 
 const App: React.FC = () => {
     const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.IDLE);
@@ -173,20 +175,21 @@ const App: React.FC = () => {
         setCallStatus(CallStatus.WAITING);
     };
 
+    // Updated: allow joining without entering a room ID.
     const handleJoinRoom = async () => {
-        if (!inputRoomID.trim()) {
-            setErrorMessage('Please enter a Room ID.');
-            setCallStatus(CallStatus.ERROR);
-            return;
-        }
+        const roomToJoin = inputRoomID.trim() || DEFAULT_ROOM_NAME;
+
         const stream = await getMedia();
         if (!stream) return;
 
+        // clear any previous error
+        setErrorMessage('');
+
         setCallStatus(CallStatus.JOINING);
         setIsInitiator(false);
-        setRoomID(inputRoomID);
+        setRoomID(roomToJoin);
         initializeSocket();
-        socket.current?.emit('join-call', inputRoomID);
+        socket.current?.emit('join-call', roomToJoin);
         setCallStatus(CallStatus.CONNECTING);
     };
 
@@ -240,16 +243,21 @@ const App: React.FC = () => {
                     <LinkIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"/>
                      <input
                         type="text"
-                        placeholder="Enter Room ID"
+                        placeholder="Enter Room ID (or press Enter to join default room)"
                         value={inputRoomID}
                         onChange={(e) => setInputRoomID(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleJoinRoom();
+                            }
+                        }}
                         className="w-full bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
                 <button
                     onClick={handleJoinRoom}
-                    disabled={!inputRoomID}
-                    className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"
                 >
                     Join Room
                 </button>
